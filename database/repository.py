@@ -46,7 +46,7 @@ def show(data):
 
 # if __name__ == '__main__':
     # add_contact("hehe", "hoho", "haoeoa", "aoeaoe", "aeaoe")
-    # delete_contact(23)
+    # delete_contact(21)
     # update_contact(21, "tj", "pj", "php", "who", "me")
     # print("Das ist Fantastisch!")
     # for each in show_all():
