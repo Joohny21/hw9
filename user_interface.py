@@ -1,5 +1,15 @@
 from abc import ABC, abstractmethod
-import classes
+import keyboard
+from database.models import Contacts
+import sqlalchemy.orm
+from database.repository import delete_contact, update_contact, add_contact, show, show_all
+from database.db import session
+
+
+def input_with_default(prompt_, default_):
+    print(prompt_, end="\n")
+    keyboard.write(default_)
+    return input()
 
 
 class IReply(ABC):
@@ -8,68 +18,89 @@ class IReply(ABC):
         pass
 
 
-class ShowNoteList(IReply):
-    def __init__(self, addrbook: classes.AddressBook):
-        self.notes = addrbook.notes.data
+class Contacts_Visuals(IReply):
+    def __init__(self, session: sqlalchemy.orm.session):
+        self.session = session
+
+    def show_all(self):
+        for each in show_all():
+            print(f"Fullname: {each.fullname}")
+            print(f"    Email: {each.email}")
+            print(f"    Phone: {each.cell_phone}")
+            if each.address:
+                print(f"    Address: {each.address}")
+            print(f"    Contact ID: {each.id}")
+
+    def show_contact(self, data):
+        contact = show(data)
+        print(f"Fullname: {contact.fullname}")
+        print(f"    Email: {contact.email}")
+        print(f"    Phone: {contact.cell_phone}")
+        if contact.address:
+            print(f"    Address: {contact.address}")
+        print(f"    Contact ID: {contact.id}")
 
     def reply(self):
-        to_print = ""
-        for each in self.notes.values():
-            to_print += each._name()
-            to_print += "\n"
-        return to_print
+        pass
 
-class ShowAllNotes(IReply):
-    def __init__(self, addrbook: classes.AddressBook):
-        self.notes = addrbook.notes.data
+
+class ManipulateContacts(IReply):
+    def __init__(self, session: sqlalchemy.orm.Session):
+        self.session = session
+
+    def update_contact(self, id_):
+        contact = self.session.query(Contacts).filter_by(id=id_)
+        print(f"Redacting contact {contact.fullname} with id {id_}:")
+        first_name = input_with_default("first name: ", contact.first_name)
+        last_name = input_with_default("last name: ", contact.last_name)
+        email = input_with_default("email: ", contact.email)
+        phone = input_with_default("phone: ", contact.cell_phone)
+        address = input_with_default("address: ", contact.address)
+        if address == "" or address == " ":
+            address = None
+        update_contact(id_, first_name, last_name, email, phone, address)
+
+    def remove_contact(self, id_):
+        contact = self.session.query(Contacts).filter_by(id=id_)
+        if input("Are you sure? y/n").lower() == "y":
+            contact.delete()
+            self.session.commit()
+        else:
+            print("Operation canceled")
+
+    def add_contact(self, _):
+        print(f"Creating new contact:")
+        first_name = input("First name: ")
+        last_name = input("Last name: ")
+        email = input("Email: ")
+        phone = input("Phone: ")
+        address = input("Address: ")
+        if address == "" or address == " ":
+            address = None
+        add_contact(first_name, last_name, email, phone, address)
+        print("Contact created")
 
     def reply(self):
-        to_print = ""
-        for note_id, note in self.notes.items():
-            to_print += f"Note ID: {note_id}\n"
-            to_print += f"{note}\n"
-        return to_print
+        pass
 
 
-class ShowNote(IReply):
-    def __init__(self, addrbook: classes.AddressBook):
-        self.book = addrbook
-
-    def reply(self):
-        try:
-            note_id = self.book.notes.enter_name_id()
-            print(self.book.notes.data[note_id])
-        except KeyError:
-            print("This note does not exists!")
-        return ""
-
-class ShowRecord(IReply):
-    def __init__(self, record: classes.Record):
-        self.record = record
-
-    def reply(self):
-        string = ""
-        if self.record:
-            string += f"{self.record.name.value}:"
-            if self.record.phones:
-                string += f"\n\tPhone numbers: {', '.join([x.value for x in self.record.phones])}"
-            if self.record.emails:
-                string += f"\n\tE-mails: {', '.join([x.value for x in self.record.emails])}"
-            if self.record.birthday:
-                birthday = self.record.birthday.value
-                if birthday.year > 2:
-                    string += f"\n\tBirthday: {birthday.strftime('%d %B %Y')}"
-                else:
-                    string += f"\n\tBirthday: {birthday.strftime('%d %B')}"
-                when_to_congratulate = self.record.birthday.days_to_next_birthday
-                if when_to_congratulate is not None:
-                    if when_to_congratulate == 0:
-                        string += f"\n\tToday is {self.record.name.value}'s birthday."
-                    elif when_to_congratulate == 1:
-                        string += f"\n\t{self.record.name.value} has birthday tomorrow."
-                    else:
-                        string += f"\n\t{self.record.name.value}'s birthday is in {when_to_congratulate} days."
-            string += "\n"
-        return string
+def help_me(_):
+    print("""
+    hello: hello,
+    good bye: closes app,
+    add contact: adds a contact,
+    delete contact []: deletes a contact
+    show contact [contact first/last name or ID]: shows a certain contact
+    show all: shows all contacts
+    help: Shows this list"""
+          )
 
 
+visuals = Contacts_Visuals(session)
+ch4nge = ManipulateContacts(session)
+
+# if __name__ == '__main__':
+#     # ch4nge = ManipulateContacts(session)
+#     # ch4nge.add_contact()
+#     my = Contacts_Visuals(session)
+#     my.show_contact("John")
