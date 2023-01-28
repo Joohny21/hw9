@@ -26,6 +26,7 @@ def def_mod(string: str):
             "delete contact": "delete_contact",
             "show contact": "show",
             "show all": "show_all",
+            "update contact":"update_contact",
             "help": "help",
         }
         if not string:

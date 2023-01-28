@@ -92,6 +92,7 @@ def help_me(_):
     delete contact []: deletes a contact
     show contact [contact first/last name or ID]: shows a certain contact
     show all: shows all contacts
+    update contact [contact ID] updates contact with new data
     help: Shows this list"""
           )
 
